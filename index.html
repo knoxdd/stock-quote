@@ -201,17 +201,32 @@ function parseCSV(text){
   });
 }
 
-// 單一資料來源：stooq 每日收盤 CSV，無需金鑰
+// 單一資料來源：stooq 每日收盤 CSV，無需金鑰（stooq 本身不支援跨網域請求，故透過公開代理轉發）
 async function fetchStooq(symbol){
   const s = symbol.toLowerCase() + '.us';
-  const r = await fetchWithTimeout(`https://stooq.com/q/d/l/?s=${s}&i=d`);
-  const text = await r.text();
-  const rows = parseCSV(text)
-    .filter(r=> r.Close && r.Close.toUpperCase()!=='N/D')
-    .map(r=>({ date:r.Date, close:parseFloat(r.Close) }))
-    .filter(r=>!isNaN(r.close));
-  if(rows.length===0) throw new Error('查無此代號的資料');
-  return rows;
+  const target = `https://stooq.com/q/d/l/?s=${s}&i=d`;
+  const urls = [
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(target)}`,
+    `https://corsproxy.io/?url=${encodeURIComponent(target)}`,
+    target // 最後嘗試直連，萬一之後 stooq 開放了 CORS
+  ];
+
+  let lastErr;
+  for(const url of urls){
+    try{
+      const r = await fetchWithTimeout(url);
+      const text = await r.text();
+      const rows = parseCSV(text)
+        .filter(r=> r.Close && r.Close.toUpperCase()!=='N/D')
+        .map(r=>({ date:r.Date, close:parseFloat(r.Close) }))
+        .filter(r=>!isNaN(r.close));
+      if(rows.length>0) return rows;
+      lastErr = new Error('查無此代號的資料');
+    }catch(e){
+      lastErr = e;
+    }
+  }
+  throw lastErr || new Error('資料來源皆無法連線');
 }
 
 async function runQuery(){
@@ -280,4 +295,3 @@ window.addEventListener('load', ()=>{
 </script>
 </body>
 </html>
-
