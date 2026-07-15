@@ -205,28 +205,29 @@ function parseCSV(text){
 async function fetchStooq(symbol){
   const s = symbol.toLowerCase() + '.us';
   const target = `https://stooq.com/q/d/l/?s=${s}&i=d`;
-  const urls = [
-    `https://api.allorigins.win/raw?url=${encodeURIComponent(target)}`,
-    `https://corsproxy.io/?url=${encodeURIComponent(target)}`,
-    target // 最後嘗試直連，萬一之後 stooq 開放了 CORS
+  const attempts = [
+    { label:'allorigins代理', url:`https://api.allorigins.win/raw?url=${encodeURIComponent(target)}` },
+    { label:'codetabs代理', url:`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(target)}` },
+    { label:'corsproxy代理', url:`https://corsproxy.io/?url=${encodeURIComponent(target)}` },
+    { label:'stooq直連', url: target }
   ];
 
-  let lastErr;
-  for(const url of urls){
+  const log = [];
+  for(const a of attempts){
     try{
-      const r = await fetchWithTimeout(url);
+      const r = await fetchWithTimeout(a.url);
       const text = await r.text();
       const rows = parseCSV(text)
         .filter(r=> r.Close && r.Close.toUpperCase()!=='N/D')
         .map(r=>({ date:r.Date, close:parseFloat(r.Close) }))
         .filter(r=>!isNaN(r.close));
       if(rows.length>0) return rows;
-      lastErr = new Error('查無此代號的資料');
+      log.push(`${a.label}: 回應了但沒有可用資料（前50字：${text.slice(0,50)}）`);
     }catch(e){
-      lastErr = e;
+      log.push(`${a.label}: ${e.name || 'Error'} - ${e.message || e}`);
     }
   }
-  throw lastErr || new Error('資料來源皆無法連線');
+  throw new Error('全部來源失敗 → ' + log.join(' ｜ '));
 }
 
 async function runQuery(){
