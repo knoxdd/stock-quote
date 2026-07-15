@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>美股每日收盤價查詢</title>
+<style>
+  :root{
+    --bg:#ffffff; --border:#e5e5e3; --text:#1c1c1c; --dim:#767674; --faint:#a8a8a5;
+    --green:#1e9e5a; --red:#d1453b; --accent:#2563eb;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Noto Sans TC", Helvetica, Arial, sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; background:var(--bg); color:var(--text); font-family:var(--font); }
+  body{ padding: 22px 16px 40px; }
+  .wrap{ max-width: 480px; margin:0 auto; }
+
+  h1{ font-size:18px; font-weight:700; margin:0 0 4px; }
+  .sub{ font-size:13px; color:var(--dim); margin:0 0 18px; }
+
+  .search-row{ display:flex; gap:8px; position:relative; margin-bottom:6px; }
+  .search-row input{
+    flex:1; border:1px solid var(--border); border-radius:10px;
+    padding:12px 14px; font-size:15px; color:var(--text); outline:none; font-family:var(--font);
+  }
+  .search-row input:focus{ border-color:var(--accent); }
+  .search-row button{
+    background:var(--accent); color:#fff; border:none; border-radius:10px;
+    padding:0 20px; font-size:14px; font-weight:600; cursor:pointer;
+  }
+
+  .suggest{
+    position:absolute; top:calc(100% + 6px); left:0; right:78px;
+    background:#fff; border:1px solid var(--border); border-radius:10px;
+    box-shadow:0 4px 14px rgba(0,0,0,0.06); z-index:20; max-height:220px; overflow-y:auto; display:none;
+  }
+  .suggest.show{ display:block; }
+  .suggest div{ padding:10px 14px; font-size:14px; cursor:pointer; display:flex; justify-content:space-between; color:var(--dim); border-bottom:1px solid var(--border); }
+  .suggest div:last-child{ border-bottom:none; }
+  .suggest div:hover{ background:#f5f6f8; color:var(--text); }
+  .suggest span.tk{ color:var(--accent); font-weight:600; }
+
+  .hint{ font-size:12px; color:var(--faint); margin-bottom:20px; }
+
+  #status{ display:none; font-size:13px; color:var(--dim); padding:20px 2px; line-height:1.6; }
+  #status.show{ display:block; }
+  #status.err{ color:var(--red); }
+  .retry{ display:inline-block; margin-top:10px; border:1px solid var(--border); border-radius:8px; padding:7px 14px; font-size:13px; cursor:pointer; }
+
+  #result{ display:none; }
+  #result.show{ display:block; }
+
+  .head{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; padding:0 2px; }
+  .head .sym{ font-size:17px; font-weight:700; }
+  .head .name{ font-size:13px; color:var(--dim); }
+  .head .latest{ text-align:right; }
+  .head .latest .p{ font-size:17px; font-weight:700; }
+  .head .latest .d{ font-size:11px; color:var(--faint); }
+
+  table{ width:100%; border-collapse:collapse; border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+  thead th{ text-align:left; font-size:11.5px; color:var(--faint); font-weight:600; padding:9px 12px; border-bottom:1px solid var(--border); background:#fafafa; }
+  thead th.num{ text-align:right; }
+  tbody td{ padding:9px 12px; font-size:13.5px; border-bottom:1px solid var(--border); }
+  tbody tr:last-child td{ border-bottom:none; }
+  tbody td.num{ text-align:right; font-variant-numeric: tabular-nums; }
+  tbody td.chg-up{ color:var(--green); }
+  tbody td.chg-down{ color:var(--red); }
+  tbody tr:nth-child(odd){ background:#fcfcfb; }
+
+  .source-note{ font-size:11px; color:var(--faint); margin-top:12px; text-align:center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>美股每日收盤價查詢</h1>
+  <p class="sub">輸入代號或公司名稱，顯示最近一個月每日收盤價</p>
+
+  <div class="search-row">
+    <input id="symInput" type="text" placeholder="例如 AAPL、蘋果、TSLA" autocomplete="off">
+    <button id="goBtn">查詢</button>
+    <div class="suggest" id="suggest"></div>
+  </div>
+  <div class="hint">支援美股代號或常見中英文名稱（蘋果、輝達、微軟…）。資料為前一交易日收盤價，非即時報價。</div>
+
+  <div id="status"></div>
+
+  <div id="result">
+    <div class="head">
+      <div>
+        <div class="sym" id="rSym">—</div>
+        <div class="name" id="rName">—</div>
+      </div>
+      <div class="latest">
+        <div class="p" id="rLatest">—</div>
+        <div class="d" id="rLatestDate">—</div>
+      </div>
+    </div>
+    <table>
+      <thead><tr><th>日期</th><th class="num">收盤價</th><th class="num">漲跌</th></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div class="source-note" id="sourceNote"></div>
+  </div>
+</div>
+
+<script>
+const DICT = {
+  '蘋果':'AAPL','apple':'AAPL',
+  '微軟':'MSFT','microsoft':'MSFT',
+  '輝達':'NVDA','英偉達':'NVDA','nvidia':'NVDA',
+  '谷歌':'GOOGL','google':'GOOGL','alphabet':'GOOGL',
+  '亞馬遜':'AMZN','amazon':'AMZN',
+  '特斯拉':'TSLA','tesla':'TSLA',
+  'meta':'META','臉書':'META','facebook':'META',
+  '網飛':'NFLX','奈飛':'NFLX','netflix':'NFLX',
+  'amd':'AMD','超微':'AMD',
+  '英特爾':'INTC','intel':'INTC',
+  '波音':'BA','boeing':'BA',
+  '摩根大通':'JPM','jpmorgan':'JPM',
+  '高盛':'GS','goldman sachs':'GS',
+  '迪士尼':'DIS','disney':'DIS',
+  '可口可樂':'KO','coca cola':'KO','coca-cola':'KO',
+  '麥當勞':'MCD','mcdonald':'MCD',
+  '星巴克':'SBUX','starbucks':'SBUX',
+  '沃爾瑪':'WMT','walmart':'WMT',
+  '耐吉':'NKE','nike':'NKE',
+  '好市多':'COST','costco':'COST',
+  'paypal':'PYPL','uber':'UBER',
+  '嬌生':'JNJ','johnson & johnson':'JNJ',
+  '輝瑞':'PFE','pfizer':'PFE',
+  '禮來':'LLY','eli lilly':'LLY',
+  '威士':'V','visa':'V',
+  '萬事達':'MA','mastercard':'MA',
+  '博通':'AVGO','broadcom':'AVGO',
+  '甲骨文':'ORCL','oracle':'ORCL',
+  'ibm':'IBM','思科':'CSCO','cisco':'CSCO',
+  '台積電':'TSM','tsmc':'TSM',
+  '標普500':'SPY','s&p500':'SPY','s&p 500':'SPY',
+  '那斯達克':'QQQ','nasdaq 100':'QQQ',
+  '道瓊':'DIA','dow jones':'DIA'
+};
+const SUGGEST_LIST = Object.entries(DICT).map(([k,v])=>({key:k, tk:v}))
+  .filter((v,i,arr)=> arr.findIndex(x=>x.tk===v.tk)===i);
+
+const input = document.getElementById('symInput');
+const suggestBox = document.getElementById('suggest');
+
+input.addEventListener('input', ()=>{
+  const q = input.value.trim().toLowerCase();
+  if(!q){ suggestBox.classList.remove('show'); return; }
+  const matches = SUGGEST_LIST.filter(s => s.key.includes(q) || s.tk.toLowerCase().includes(q)).slice(0,8);
+  if(matches.length===0){ suggestBox.classList.remove('show'); return; }
+  suggestBox.innerHTML = matches.map(m=>`<div data-tk="${m.tk}">${m.key}<span class="tk">${m.tk}</span></div>`).join('');
+  suggestBox.classList.add('show');
+});
+suggestBox.addEventListener('click', (e)=>{
+  const row = e.target.closest('div[data-tk]');
+  if(!row) return;
+  input.value = row.dataset.tk;
+  suggestBox.classList.remove('show');
+  runQuery();
+});
+document.addEventListener('click', (e)=>{
+  if(!e.target.closest('.search-row')) suggestBox.classList.remove('show');
+});
+input.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ suggestBox.classList.remove('show'); runQuery(); } });
+document.getElementById('goBtn').addEventListener('click', runQuery);
+
+function resolveSymbol(raw){
+  const s = raw.trim();
+  if(!s) return null;
+  const low = s.toLowerCase();
+  if(DICT[low]) return DICT[low];
+  return s.toUpperCase();
+}
+function fmtNum(n,d=2){ if(n===undefined||n===null||isNaN(n)) return '—'; return Number(n).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d}); }
+
+function setStatus(msg, isErr, showRetry){
+  const el = document.getElementById('status');
+  el.innerHTML = msg + (showRetry ? '<br><span class="retry" id="retryBtn">重新查詢</span>' : '');
+  el.className = 'show' + (isErr ? ' err' : '');
+  document.getElementById('result').classList.remove('show');
+  if(showRetry) document.getElementById('retryBtn').addEventListener('click', runQuery);
+}
+
+async function fetchWithTimeout(url){
+  const r = await fetch(url);
+  if(!r.ok) throw new Error('HTTP ' + r.status);
+  return r;
+}
+
+function parseCSV(text){
+  const lines = text.trim().split('\n').filter(l=>l.length>0);
+  if(lines.length<2) return [];
+  const headers = lines[0].split(',');
+  return lines.slice(1).map(line=>{
+    const cells = line.split(',');
+    const row = {};
+    headers.forEach((h,i)=> row[h.trim()] = cells[i]);
+    return row;
+  });
+}
+
+// 單一資料來源：stooq 每日收盤 CSV，無需金鑰
+async function fetchStooq(symbol){
+  const s = symbol.toLowerCase() + '.us';
+  const r = await fetchWithTimeout(`https://stooq.com/q/d/l/?s=${s}&i=d`);
+  const text = await r.text();
+  const rows = parseCSV(text)
+    .filter(r=> r.Close && r.Close.toUpperCase()!=='N/D')
+    .map(r=>({ date:r.Date, close:parseFloat(r.Close) }))
+    .filter(r=>!isNaN(r.close));
+  if(rows.length===0) throw new Error('查無此代號的資料');
+  return rows;
+}
+
+async function runQuery(){
+  const raw = input.value;
+  const symbol = resolveSymbol(raw);
+  if(!symbol){ setStatus('請輸入代號或公司名稱。', true); return; }
+  setStatus('查詢中，請稍候…', false);
+
+  try{
+    const allRows = await fetchStooq(symbol);
+    // 取最近一個月（含前一收盤價往前推），約 22 個交易日
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setDate(oneMonthAgo.getDate() - 31);
+    let rows = allRows.filter(r => new Date(r.date) >= oneMonthAgo);
+    if(rows.length === 0) rows = allRows.slice(-22);
+    rows = rows.slice(-23); // 保留一筆額外資料算漲跌
+
+    renderTable(symbol, rows);
+    document.getElementById('result').classList.add('show');
+    document.getElementById('status').classList.remove('show');
+    document.getElementById('sourceNote').textContent = '資料來源：stooq.com（每日收盤價）';
+  }catch(e){
+    setStatus(
+      `查詢失敗：${e.message || e}<br>` +
+      `<span style="color:var(--faint);font-size:11.5px">請確認代號是否正確；若持續失敗，可能是目前網路環境封鎖了 stooq.com。</span>`,
+      true, true
+    );
+  }
+}
+
+function renderTable(symbol, rows){
+  // rows 依日期由舊到新排序
+  const display = rows.slice(-22).reverse(); // 新到舊顯示，最多22筆(一個月交易日)
+  const latest = rows[rows.length-1];
+
+  document.getElementById('rSym').textContent = symbol;
+  document.getElementById('rName').textContent = DICT_NAME(symbol);
+  document.getElementById('rLatest').textContent = '$' + fmtNum(latest.close);
+  document.getElementById('rLatestDate').textContent = latest.date;
+
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = display.map((r, idx)=>{
+    // 找出這一筆在 rows 中的前一筆，計算漲跌
+    const i = rows.findIndex(x=>x.date===r.date);
+    const prev = i>0 ? rows[i-1] : null;
+    let chgCell = '—';
+    let chgClass = '';
+    if(prev){
+      const chg = r.close - prev.close;
+      chgClass = chg>0 ? 'chg-up' : (chg<0 ? 'chg-down' : '');
+      chgCell = (chg>=0?'+':'') + fmtNum(chg);
+    }
+    return `<tr><td>${r.date}</td><td class="num">$${fmtNum(r.close)}</td><td class="num ${chgClass}">${chgCell}</td></tr>`;
+  }).join('');
+}
+
+function DICT_NAME(symbol){
+  const entry = SUGGEST_LIST.find(s => s.tk === symbol);
+  return entry ? entry.key.toUpperCase() : symbol;
+}
+
+window.addEventListener('load', ()=>{
+  input.value = 'AAPL';
+  runQuery();
+});
+</script>
+</body>
+</html>
