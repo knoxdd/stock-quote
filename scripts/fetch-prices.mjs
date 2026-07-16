@@ -5,7 +5,7 @@ const root = process.cwd();
 const dataDir = path.join(root, "data");
 const stocksPath = path.join(dataDir, "stocks.json");
 const outputPath = path.join(dataDir, "prices.json");
-const rangeDays = Number(process.env.RANGE_DAYS || 45);
+const rangeDays = Number(process.env.RANGE_DAYS || 100);
 
 function asDate(value) {
   const date = new Date(value * 1000);
@@ -14,7 +14,7 @@ function asDate(value) {
 
 async function fetchSymbol(symbol) {
   const clean = symbol.trim().toUpperCase();
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(clean)}?range=2mo&interval=1d`;
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(clean)}?range=6mo&interval=1d`;
   const response = await fetch(url, {
     headers: {
       "accept": "application/json",
