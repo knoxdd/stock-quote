@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>美股近一個月收盤價</title>
+  <title>四檔美股收盤價追蹤</title>
   <style>
     :root {
       --bg: #f6f7f9;
@@ -25,113 +25,160 @@
       background: var(--bg);
       color: var(--text);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
-      padding: 22px 16px 36px;
+      padding: 16px;
     }
 
     main {
-      width: min(980px, 100%);
+      width: min(1180px, 100%);
       margin: 0 auto;
       display: grid;
-      gap: 14px;
+      gap: 12px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: end;
+      flex-wrap: wrap;
     }
 
     h1 {
       margin: 0;
-      font-size: 26px;
+      font-size: 24px;
       letter-spacing: 0;
     }
 
-    .sub {
+    .sub, .status {
       margin: 6px 0 0;
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.5;
-    }
-
-    .panel {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 14px;
-    }
-
-    .controls {
-      display: grid;
-      grid-template-columns: minmax(160px, 1fr) minmax(150px, 1fr) auto;
-      gap: 10px;
-      align-items: end;
-    }
-
-    label {
-      display: block;
-      color: var(--muted);
-      font-size: 12px;
-      margin-bottom: 6px;
-    }
-
-    select, input, button {
-      width: 100%;
-      min-height: 40px;
-      border-radius: 8px;
-      font: inherit;
-    }
-
-    select, input {
-      border: 1px solid var(--line);
-      padding: 0 10px;
-      background: white;
-      color: var(--text);
-    }
-
-    button {
-      border: 1px solid var(--accent);
-      background: var(--accent);
-      color: white;
-      padding: 0 14px;
-      cursor: pointer;
-      font-weight: 700;
-      white-space: nowrap;
-    }
-
-    .summary {
-      display: flex;
-      gap: 12px;
-      justify-content: space-between;
-      flex-wrap: wrap;
       color: var(--muted);
       font-size: 13px;
       line-height: 1.5;
     }
 
-    .chart-box {
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    label {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    select, input {
+      min-height: 36px;
       border: 1px solid var(--line);
       border-radius: 8px;
-      background: #fbfcfd;
-      padding: 10px;
+      padding: 0 10px;
+      background: white;
+      color: var(--text);
+      font: inherit;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 8px;
+    }
+
+    .symbol {
+      font-size: 22px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .date {
+      color: var(--muted);
+      font-size: 12px;
+      text-align: right;
+    }
+
+    .price {
+      font-size: 26px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .buy-row {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 8px;
+      align-items: center;
+    }
+
+    .buy-row input {
+      width: 100%;
+      text-align: right;
+      font-weight: 700;
     }
 
     canvas {
       width: 100%;
-      height: 320px;
+      height: 130px;
       display: block;
-    }
-
-    .table-wrap {
-      max-height: 420px;
-      overflow: auto;
       border: 1px solid var(--line);
       border-radius: 8px;
+      background: #fbfcfd;
+    }
+
+    .metrics {
+      display: grid;
+      gap: 6px;
+      font-size: 13px;
+    }
+
+    .metric {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      color: var(--muted);
+    }
+
+    .metric strong {
+      color: var(--text);
+      text-align: right;
+    }
+
+    .up { color: var(--good) !important; }
+    .down { color: var(--bad) !important; }
+
+    .table-panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: auto;
+      max-height: 360px;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 560px;
+      min-width: 720px;
       font-size: 13px;
     }
 
     th, td {
-      padding: 9px 10px;
+      padding: 8px 10px;
       border-bottom: 1px solid var(--line);
       text-align: right;
       white-space: nowrap;
@@ -142,77 +189,73 @@
     th {
       position: sticky;
       top: 0;
-      background: #edf2f7;
       z-index: 1;
+      background: #edf2f7;
     }
 
-    tr:last-child td { border-bottom: 0; }
-    .up { color: var(--good); }
-    .down { color: var(--bad); }
-    .note { color: var(--muted); font-size: 12px; line-height: 1.5; }
+    @media (max-width: 980px) {
+      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
 
-    @media (max-width: 680px) {
-      .controls { grid-template-columns: 1fr; }
-      canvas { height: 260px; }
+    @media (max-width: 560px) {
+      body { padding: 12px; }
+      .grid { grid-template-columns: 1fr; }
+      header { align-items: stretch; }
+      .controls { display: grid; grid-template-columns: 1fr; }
+      select { width: 100%; }
     }
   </style>
 </head>
 <body>
   <main>
     <header>
-      <h1>美股近一個月收盤價</h1>
-      <p class="sub">GitHub Actions 每天更新資料；網頁只讀靜態 JSON，不需要 API key。</p>
+      <div>
+        <h1>四檔美股收盤價追蹤</h1>
+        <p class="sub">同時顯示 TSM、NVDA、AMD、AVGO；買入價存在你的瀏覽器，不需要 API key。</p>
+      </div>
+      <div class="controls">
+        <label for="period">期間</label>
+        <select id="period">
+          <option value="1">近 1 個月</option>
+          <option value="3">近 3 個月</option>
+        </select>
+      </div>
     </header>
 
-    <section class="panel controls">
-      <div>
-        <label for="symbol">股票</label>
-        <select id="symbol"></select>
-      </div>
-      <div>
-        <label for="buyPrice">買入價</label>
-        <input id="buyPrice" type="number" min="0" step="0.01" placeholder="例如 200">
-      </div>
-      <div>
-        <button id="drawBtn" type="button">顯示</button>
-      </div>
-    </section>
-
-    <section class="panel summary">
+    <div class="status">
       <span id="status">讀取資料中</span>
       <span id="updatedAt"></span>
-    </section>
+    </div>
 
-    <section class="panel chart-box">
-      <canvas id="chart" width="900" height="320"></canvas>
-    </section>
+    <section class="grid" id="cards"></section>
 
-    <section class="panel table-wrap">
+    <section class="table-panel">
       <table>
         <thead>
           <tr>
+            <th>股票</th>
             <th>日期</th>
-            <th>收盤價</th>
+            <th>最後收盤</th>
             <th>買入價</th>
             <th>價差</th>
             <th>報酬率</th>
+            <th>區間高點</th>
+            <th>區間低點</th>
           </tr>
         </thead>
-        <tbody id="tbody"></tbody>
+        <tbody id="summaryRows"></tbody>
       </table>
     </section>
-
-    <p class="note">要新增股票，修改 <code>data/stocks.json</code> 後到 GitHub Actions 手動執行一次「Update stock history」。</p>
   </main>
 
   <script>
-    const symbolSelect = document.querySelector("#symbol");
-    const buyPriceInput = document.querySelector("#buyPrice");
-    const drawBtn = document.querySelector("#drawBtn");
+    const TARGET_SYMBOLS = ["TSM", "NVDA", "AMD", "AVGO"];
+    const cardsEl = document.querySelector("#cards");
+    const periodEl = document.querySelector("#period");
     const statusEl = document.querySelector("#status");
     const updatedAtEl = document.querySelector("#updatedAt");
-    const tbody = document.querySelector("#tbody");
-    const chart = document.querySelector("#chart");
+    const summaryRowsEl = document.querySelector("#summaryRows");
+    const storeKey = "stock-quote:buy-prices:v1";
     let priceData = null;
 
     function money(value) {
@@ -225,58 +268,99 @@
       return `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`;
     }
 
-    function localDateTime(value) {
-      if (!value) return "尚未更新";
-      return new Date(value).toLocaleString("zh-TW", { hour12: false });
+    function cls(value) {
+      if (!Number.isFinite(value) || value === 0) return "";
+      return value > 0 ? "up" : "down";
+    }
+
+    function loadBuyPrices() {
+      try {
+        return JSON.parse(localStorage.getItem(storeKey)) || {};
+      } catch {
+        return {};
+      }
+    }
+
+    function saveBuyPrice(symbol, value) {
+      const prices = loadBuyPrices();
+      prices[symbol] = value;
+      localStorage.setItem(storeKey, JSON.stringify(prices));
+    }
+
+    function cutoffDate(months) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - Number(months || 1));
+      return date.toISOString().slice(0, 10);
+    }
+
+    function rowsFor(symbol) {
+      const allRows = priceData?.symbols?.[symbol]?.rows || [];
+      const cutoff = cutoffDate(periodEl.value);
+      return allRows.filter((row) => row.date >= cutoff);
     }
 
     async function loadData() {
       const response = await fetch(`data/prices.json?ts=${Date.now()}`, { cache: "no-store" });
       if (!response.ok) throw new Error(`無法讀取 data/prices.json (${response.status})`);
       priceData = await response.json();
-      const symbols = Object.keys(priceData.symbols || {}).filter((symbol) => priceData.symbols[symbol]?.rows?.length);
-      symbolSelect.innerHTML = symbols.map((symbol) => `<option value="${symbol}">${symbol}</option>`).join("");
-      updatedAtEl.textContent = `資料更新：${localDateTime(priceData.updatedAt)}`;
-      if (!symbols.length) {
-        statusEl.textContent = "目前沒有可用資料，請先執行 GitHub Actions 更新。";
-        return;
-      }
-      statusEl.textContent = "已載入資料";
-      draw();
+      updatedAtEl.textContent = ` / 資料更新：${priceData.updatedAt ? new Date(priceData.updatedAt).toLocaleString("zh-TW", { hour12: false }) : "尚未更新"}`;
+      render();
     }
 
-    function selectedRows() {
-      const symbol = symbolSelect.value;
-      return priceData?.symbols?.[symbol]?.rows || [];
+    function render() {
+      const buys = loadBuyPrices();
+      cardsEl.innerHTML = TARGET_SYMBOLS.map((symbol) => cardTemplate(symbol, buys[symbol] || "")).join("");
+      cardsEl.querySelectorAll("input[data-symbol]").forEach((input) => {
+        input.addEventListener("input", () => {
+          saveBuyPrice(input.dataset.symbol, Number(input.value || 0));
+          render();
+        });
+      });
+      TARGET_SYMBOLS.forEach(drawSymbolChart);
+      renderSummary();
+      statusEl.textContent = `顯示近 ${periodEl.value} 個月資料`;
     }
 
-    function draw() {
-      const symbol = symbolSelect.value;
-      const rows = selectedRows();
-      const buy = Number(buyPriceInput.value || 0);
-      if (!rows.length) {
-        statusEl.textContent = `${symbol || "這支股票"} 沒有資料`;
-        return;
-      }
-      const first = rows[0];
+    function cardTemplate(symbol, buyValue) {
+      const rows = rowsFor(symbol);
       const last = rows[rows.length - 1];
-      const diff = buy ? last.close - buy : NaN;
-      const diffPct = buy ? diff / buy * 100 : NaN;
-      statusEl.textContent = `${symbol}：${first.date} 到 ${last.date}，最後收盤 ${money(last.close)}，相對買入價 ${money(buy)} 為 ${pct(diffPct)}`;
-      drawChart(rows, buy);
-      renderTable(rows, buy);
+      const buy = Number(buyValue || 0);
+      const diff = last && buy ? last.close - buy : NaN;
+      const diffPct = last && buy ? diff / buy * 100 : NaN;
+      return `
+        <article class="card">
+          <div class="card-head">
+            <div class="symbol">${symbol}</div>
+            <div class="date">${last?.date || "無資料"}</div>
+          </div>
+          <div class="price">${last ? money(last.close) : "--"}</div>
+          <div class="buy-row">
+            <label for="buy-${symbol}">買入價</label>
+            <input id="buy-${symbol}" data-symbol="${symbol}" type="number" min="0" step="0.01" value="${buyValue}" placeholder="自訂">
+          </div>
+          <canvas id="chart-${symbol}" width="300" height="130"></canvas>
+          <div class="metrics">
+            <div class="metric"><span>價差</span><strong class="${cls(diff)}">${Number.isFinite(diff) ? `${diff >= 0 ? "+" : "-"}${money(Math.abs(diff))}` : "--"}</strong></div>
+            <div class="metric"><span>報酬率</span><strong class="${cls(diffPct)}">${pct(diffPct)}</strong></div>
+          </div>
+        </article>
+      `;
     }
 
-    function drawChart(rows, buy) {
-      const rect = chart.getBoundingClientRect();
+    function drawSymbolChart(symbol) {
+      const canvas = document.querySelector(`#chart-${symbol}`);
+      const rows = rowsFor(symbol);
+      if (!canvas || !rows.length) return;
+      const buy = Number(loadBuyPrices()[symbol] || 0);
+      const rect = canvas.getBoundingClientRect();
       const scale = window.devicePixelRatio || 1;
-      chart.width = Math.max(620, Math.floor(rect.width * scale));
-      chart.height = Math.floor(320 * scale);
-      const ctx = chart.getContext("2d");
+      canvas.width = Math.max(260, Math.floor(rect.width * scale));
+      canvas.height = Math.floor(130 * scale);
+      const ctx = canvas.getContext("2d");
       ctx.scale(scale, scale);
-      const width = chart.width / scale;
-      const height = chart.height / scale;
-      const pad = { left: 58, right: 18, top: 18, bottom: 38 };
+      const width = canvas.width / scale;
+      const height = canvas.height / scale;
+      const pad = { left: 42, right: 8, top: 10, bottom: 22 };
       const closes = rows.map((row) => Number(row.close));
       const values = buy > 0 ? closes.concat(buy) : closes;
       const min = Math.min(...values);
@@ -291,29 +375,25 @@
       ctx.strokeStyle = "#d8dee4";
       ctx.lineWidth = 1;
       ctx.fillStyle = "#667085";
-      ctx.font = "12px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+      ctx.font = "10px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
 
-      for (let i = 0; i <= 4; i += 1) {
-        const value = min + span * i / 4;
+      [min, max].forEach((value) => {
         const yy = y(value);
         ctx.beginPath();
         ctx.moveTo(pad.left, yy);
         ctx.lineTo(width - pad.right, yy);
         ctx.stroke();
-        ctx.fillText(money(value), 6, yy + 4);
-      }
+        ctx.fillText(money(value).replace(".00", ""), 5, yy + 3);
+      });
 
       if (buy > 0) {
-        const buyY = y(buy);
         ctx.strokeStyle = "#b45309";
-        ctx.setLineDash([6, 5]);
+        ctx.setLineDash([5, 4]);
         ctx.beginPath();
-        ctx.moveTo(pad.left, buyY);
-        ctx.lineTo(width - pad.right, buyY);
+        ctx.moveTo(pad.left, y(buy));
+        ctx.lineTo(width - pad.right, y(buy));
         ctx.stroke();
         ctx.setLineDash([]);
-        ctx.fillStyle = "#b45309";
-        ctx.fillText(`買入 ${money(buy)}`, pad.left + 8, buyY - 7);
       }
 
       ctx.strokeStyle = "#2563eb";
@@ -325,40 +405,39 @@
       });
       ctx.stroke();
 
-      ctx.fillStyle = "#2563eb";
-      [0, Math.floor((rows.length - 1) / 2), rows.length - 1].forEach((index) => {
-        const row = rows[index];
-        if (!row) return;
-        ctx.beginPath();
-        ctx.arc(x(index), y(row.close), 3, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = "#667085";
-        ctx.fillText(row.date.slice(5), x(index) - 18, height - 12);
-        ctx.fillStyle = "#2563eb";
-      });
+      ctx.fillStyle = "#667085";
+      ctx.fillText(rows[0].date.slice(5), pad.left, height - 7);
+      ctx.fillText(rows[rows.length - 1].date.slice(5), width - 42, height - 7);
     }
 
-    function renderTable(rows, buy) {
-      tbody.innerHTML = rows.slice().reverse().map((row) => {
-        const diff = buy ? row.close - buy : NaN;
-        const diffPct = buy ? diff / buy * 100 : NaN;
-        const cls = diff > 0 ? "up" : diff < 0 ? "down" : "";
+    function renderSummary() {
+      const buys = loadBuyPrices();
+      summaryRowsEl.innerHTML = TARGET_SYMBOLS.map((symbol) => {
+        const rows = rowsFor(symbol);
+        const last = rows[rows.length - 1];
+        const buy = Number(buys[symbol] || 0);
+        const closes = rows.map((row) => row.close);
+        const high = closes.length ? Math.max(...closes) : NaN;
+        const low = closes.length ? Math.min(...closes) : NaN;
+        const diff = last && buy ? last.close - buy : NaN;
+        const diffPct = last && buy ? diff / buy * 100 : NaN;
         return `
           <tr>
-            <td>${row.date}</td>
-            <td>${money(row.close)}</td>
+            <td>${symbol}</td>
+            <td>${last?.date || "--"}</td>
+            <td>${last ? money(last.close) : "--"}</td>
             <td>${money(buy)}</td>
-            <td class="${cls}">${Number.isFinite(diff) ? `${diff >= 0 ? "+" : "-"}${money(Math.abs(diff))}` : "--"}</td>
-            <td class="${cls}">${pct(diffPct)}</td>
+            <td class="${cls(diff)}">${Number.isFinite(diff) ? `${diff >= 0 ? "+" : "-"}${money(Math.abs(diff))}` : "--"}</td>
+            <td class="${cls(diffPct)}">${pct(diffPct)}</td>
+            <td>${money(high)}</td>
+            <td>${money(low)}</td>
           </tr>
         `;
       }).join("");
     }
 
-    drawBtn.addEventListener("click", draw);
-    symbolSelect.addEventListener("change", draw);
-    buyPriceInput.addEventListener("change", draw);
-    window.addEventListener("resize", draw);
+    periodEl.addEventListener("change", render);
+    window.addEventListener("resize", render);
 
     loadData().catch((error) => {
       statusEl.textContent = error.message;
