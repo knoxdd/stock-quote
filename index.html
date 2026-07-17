@@ -13,6 +13,8 @@
       --line: #d8dee4;
       --accent: #2563eb;
       --buy: #b45309;
+      --ko: #7c3aed;
+      --strike: #0891b2;
       --good: #087443;
       --bad: #b42318;
     }
@@ -119,14 +121,19 @@
       line-height: 1;
     }
 
-    .buy-row {
+    .levels {
+      display: grid;
+      gap: 7px;
+    }
+
+    .level-row {
       display: grid;
       grid-template-columns: auto minmax(0, 1fr);
       gap: 8px;
       align-items: center;
     }
 
-    .buy-row input {
+    .level-row input {
       width: 100%;
       text-align: right;
       font-weight: 700;
@@ -159,8 +166,33 @@
       text-align: right;
     }
 
-    .up { color: var(--good) !important; }
-    .down { color: var(--bad) !important; }
+    .legend {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .legend i {
+      width: 18px;
+      height: 0;
+      border-top: 2px solid currentColor;
+      display: inline-block;
+    }
+
+    .legend .buy { color: var(--buy); }
+    .legend .ko { color: var(--ko); }
+    .legend .strike { color: var(--strike); }
+
+    .up { color: var(--bad) !important; }
+    .down { color: var(--good) !important; }
 
     .table-panel {
       background: var(--panel);
@@ -211,7 +243,7 @@
     <header>
       <div>
         <h1>四檔美股收盤價追蹤</h1>
-        <p class="sub">同時顯示 TSM、NVDA、AMD、AVGO；買入價存在你的瀏覽器，不需要 API key。</p>
+        <p class="sub">同時顯示 TSM、NVDA、AMD、AVGO；買入價、KO 價、執行價存在你的瀏覽器，不需要 API key。</p>
       </div>
       <div class="controls">
         <label for="period">期間</label>
@@ -237,6 +269,8 @@
             <th>日期</th>
             <th>最後收盤</th>
             <th>買入價</th>
+            <th>KO 價</th>
+            <th>執行價</th>
             <th>價差</th>
             <th>報酬率</th>
             <th>區間高點</th>
@@ -255,7 +289,8 @@
     const statusEl = document.querySelector("#status");
     const updatedAtEl = document.querySelector("#updatedAt");
     const summaryRowsEl = document.querySelector("#summaryRows");
-    const storeKey = "stock-quote:buy-prices:v1";
+    const storeKey = "stock-quote:levels:v2";
+    const legacyBuyStoreKey = "stock-quote:buy-prices:v1";
     let priceData = null;
 
     function money(value) {
@@ -273,18 +308,39 @@
       return value > 0 ? "up" : "down";
     }
 
-    function loadBuyPrices() {
+    function normalizeLevels(raw) {
+      const levels = {};
+      TARGET_SYMBOLS.forEach((symbol) => {
+        const value = raw?.[symbol];
+        if (typeof value === "number") {
+          levels[symbol] = { buy: value, ko: 0, strike: 0 };
+        } else {
+          levels[symbol] = {
+            buy: Number(value?.buy || 0),
+            ko: Number(value?.ko || 0),
+            strike: Number(value?.strike || 0)
+          };
+        }
+      });
+      return levels;
+    }
+
+    function loadLevels() {
       try {
-        return JSON.parse(localStorage.getItem(storeKey)) || {};
+        const stored = JSON.parse(localStorage.getItem(storeKey));
+        if (stored) return normalizeLevels(stored);
+        const legacy = JSON.parse(localStorage.getItem(legacyBuyStoreKey));
+        return normalizeLevels(legacy || {});
       } catch {
-        return {};
+        return normalizeLevels({});
       }
     }
 
-    function saveBuyPrice(symbol, value) {
-      const prices = loadBuyPrices();
-      prices[symbol] = value;
-      localStorage.setItem(storeKey, JSON.stringify(prices));
+    function saveLevel(symbol, kind, value) {
+      const levels = loadLevels();
+      levels[symbol] = levels[symbol] || { buy: 0, ko: 0, strike: 0 };
+      levels[symbol][kind] = value;
+      localStorage.setItem(storeKey, JSON.stringify(levels));
     }
 
     function cutoffDate(months) {
@@ -303,16 +359,16 @@
       const response = await fetch(`data/prices.json?ts=${Date.now()}`, { cache: "no-store" });
       if (!response.ok) throw new Error(`無法讀取 data/prices.json (${response.status})`);
       priceData = await response.json();
-      updatedAtEl.textContent = ` / 資料更新：${priceData.updatedAt ? new Date(priceData.updatedAt).toLocaleString("zh-TW", { hour12: false }) : "尚未更新"}`;
+      updatedAtEl.textContent = ` / 資料更新：${priceData.updatedAt ? new Date(priceData.updatedAt).toLocaleString("zh-TW", { hour12: false }) : "尚未更新"}（每日自動抓前一個美股交易日收盤價）`;
       render();
     }
 
     function render() {
-      const buys = loadBuyPrices();
-      cardsEl.innerHTML = TARGET_SYMBOLS.map((symbol) => cardTemplate(symbol, buys[symbol] || "")).join("");
-      cardsEl.querySelectorAll("input[data-symbol]").forEach((input) => {
+      const levels = loadLevels();
+      cardsEl.innerHTML = TARGET_SYMBOLS.map((symbol) => cardTemplate(symbol, levels[symbol])).join("");
+      cardsEl.querySelectorAll("input[data-symbol][data-kind]").forEach((input) => {
         input.addEventListener("input", () => {
-          saveBuyPrice(input.dataset.symbol, Number(input.value || 0));
+          saveLevel(input.dataset.symbol, input.dataset.kind, Number(input.value || 0));
         });
         input.addEventListener("change", render);
         input.addEventListener("keydown", (event) => {
@@ -327,10 +383,12 @@
       statusEl.textContent = `顯示近 ${periodEl.value} 個月資料`;
     }
 
-    function cardTemplate(symbol, buyValue) {
+    function cardTemplate(symbol, level) {
       const rows = rowsFor(symbol);
       const last = rows[rows.length - 1];
-      const buy = Number(buyValue || 0);
+      const buy = Number(level?.buy || 0);
+      const ko = Number(level?.ko || 0);
+      const strike = Number(level?.strike || 0);
       const diff = last && buy ? last.close - buy : NaN;
       const diffPct = last && buy ? diff / buy * 100 : NaN;
       return `
@@ -340,11 +398,26 @@
             <div class="date">${last?.date || "無資料"}</div>
           </div>
           <div class="price">${last ? money(last.close) : "--"}</div>
-          <div class="buy-row">
+          <div class="levels">
+          <div class="level-row">
             <label for="buy-${symbol}">買入價</label>
-            <input id="buy-${symbol}" data-symbol="${symbol}" type="number" min="0" step="0.01" value="${buyValue}" placeholder="自訂">
+            <input id="buy-${symbol}" data-symbol="${symbol}" data-kind="buy" type="number" min="0" step="0.01" value="${buy || ""}" placeholder="自訂">
+          </div>
+          <div class="level-row">
+            <label for="ko-${symbol}">KO 價</label>
+            <input id="ko-${symbol}" data-symbol="${symbol}" data-kind="ko" type="number" min="0" step="0.01" value="${ko || ""}" placeholder="自訂">
+          </div>
+          <div class="level-row">
+            <label for="strike-${symbol}">執行價</label>
+            <input id="strike-${symbol}" data-symbol="${symbol}" data-kind="strike" type="number" min="0" step="0.01" value="${strike || ""}" placeholder="自訂">
+          </div>
           </div>
           <canvas id="chart-${symbol}" width="300" height="130"></canvas>
+          <div class="legend">
+            <span class="buy"><i></i>買入</span>
+            <span class="ko"><i></i>KO</span>
+            <span class="strike"><i></i>執行</span>
+          </div>
           <div class="metrics">
             <div class="metric"><span>價差</span><strong class="${cls(diff)}">${Number.isFinite(diff) ? `${diff >= 0 ? "+" : "-"}${money(Math.abs(diff))}` : "--"}</strong></div>
             <div class="metric"><span>報酬率</span><strong class="${cls(diffPct)}">${pct(diffPct)}</strong></div>
@@ -357,7 +430,10 @@
       const canvas = document.querySelector(`#chart-${symbol}`);
       const rows = rowsFor(symbol);
       if (!canvas || !rows.length) return;
-      const buy = Number(loadBuyPrices()[symbol] || 0);
+      const level = loadLevels()[symbol] || {};
+      const buy = Number(level.buy || 0);
+      const ko = Number(level.ko || 0);
+      const strike = Number(level.strike || 0);
       const rect = canvas.getBoundingClientRect();
       const scale = window.devicePixelRatio || 1;
       canvas.width = Math.max(260, Math.floor(rect.width * scale));
@@ -368,7 +444,8 @@
       const height = canvas.height / scale;
       const pad = { left: 42, right: 8, top: 10, bottom: 22 };
       const closes = rows.map((row) => Number(row.close));
-      const values = buy > 0 ? closes.concat(buy) : closes;
+      const guideValues = [buy, ko, strike].filter((value) => Number.isFinite(value) && value > 0);
+      const values = closes.concat(guideValues);
       const min = Math.min(...values);
       const max = Math.max(...values);
       const span = max === min ? 1 : max - min;
@@ -392,15 +469,9 @@
         ctx.fillText(money(value).replace(".00", ""), 5, yy + 3);
       });
 
-      if (buy > 0) {
-        ctx.strokeStyle = "#b45309";
-        ctx.setLineDash([5, 4]);
-        ctx.beginPath();
-        ctx.moveTo(pad.left, y(buy));
-        ctx.lineTo(width - pad.right, y(buy));
-        ctx.stroke();
-        ctx.setLineDash([]);
-      }
+      drawGuideLine(ctx, y, pad.left, width - pad.right, buy, "#b45309", [5, 4]);
+      drawGuideLine(ctx, y, pad.left, width - pad.right, ko, "#7c3aed", [2, 4]);
+      drawGuideLine(ctx, y, pad.left, width - pad.right, strike, "#0891b2", []);
 
       ctx.strokeStyle = "#2563eb";
       ctx.lineWidth = 2;
@@ -416,12 +487,26 @@
       ctx.fillText(rows[rows.length - 1].date.slice(5), width - 42, height - 7);
     }
 
+    function drawGuideLine(ctx, yScale, startX, endX, value, color, dash) {
+      if (!Number.isFinite(value) || value <= 0) return;
+      ctx.strokeStyle = color;
+      ctx.setLineDash(dash);
+      ctx.beginPath();
+      ctx.moveTo(startX, yScale(value));
+      ctx.lineTo(endX, yScale(value));
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
     function renderSummary() {
-      const buys = loadBuyPrices();
+      const levels = loadLevels();
       summaryRowsEl.innerHTML = TARGET_SYMBOLS.map((symbol) => {
         const rows = rowsFor(symbol);
         const last = rows[rows.length - 1];
-        const buy = Number(buys[symbol] || 0);
+        const level = levels[symbol] || {};
+        const buy = Number(level.buy || 0);
+        const ko = Number(level.ko || 0);
+        const strike = Number(level.strike || 0);
         const closes = rows.map((row) => row.close);
         const high = closes.length ? Math.max(...closes) : NaN;
         const low = closes.length ? Math.min(...closes) : NaN;
@@ -433,6 +518,8 @@
             <td>${last?.date || "--"}</td>
             <td>${last ? money(last.close) : "--"}</td>
             <td>${money(buy)}</td>
+            <td>${money(ko)}</td>
+            <td>${money(strike)}</td>
             <td class="${cls(diff)}">${Number.isFinite(diff) ? `${diff >= 0 ? "+" : "-"}${money(Math.abs(diff))}` : "--"}</td>
             <td class="${cls(diffPct)}">${pct(diffPct)}</td>
             <td>${money(high)}</td>
