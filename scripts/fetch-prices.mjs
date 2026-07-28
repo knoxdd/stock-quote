@@ -43,6 +43,12 @@ async function main() {
   const symbols = JSON.parse(await fs.readFile(stocksPath, "utf8"))
     .map((symbol) => String(symbol).trim().toUpperCase())
     .filter(Boolean);
+  let previous = { symbols: {} };
+  try {
+    previous = JSON.parse(await fs.readFile(outputPath, "utf8"));
+  } catch {
+    previous = { symbols: {} };
+  }
 
   const output = {
     updatedAt: new Date().toISOString(),
@@ -59,12 +65,13 @@ async function main() {
       };
       console.log(`${symbol}: ${output.symbols[symbol].rows.length} rows`);
     } catch (error) {
+      const oldRows = previous?.symbols?.[symbol]?.rows || [];
       output.symbols[symbol] = {
-        ok: false,
+        ok: oldRows.length > 0,
         error: error.message,
-        rows: []
+        rows: oldRows
       };
-      console.warn(`${symbol}: ${error.message}`);
+      console.warn(`${symbol}: ${error.message}${oldRows.length ? `, kept ${oldRows.length} old rows` : ""}`);
     }
   }
 
