@@ -3,20 +3,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>四檔美股收盤價追蹤</title>
+  <title>指定日收盤價比較表</title>
   <style>
     :root {
       --bg: #f6f7f9;
-      --panel: #fff;
+      --panel: #ffffff;
       --text: #1f2937;
       --muted: #667085;
       --line: #d8dee4;
       --accent: #2563eb;
-      --buy: #b45309;
-      --ko: #7c3aed;
-      --strike: #0891b2;
-      --good: #087443;
-      --bad: #b42318;
+      --hit-bg: #fff1f0;
+      --hit-line: #ff9f9a;
+      --hit-text: #b42318;
+      --soft: #edf2f7;
     }
 
     * { box-sizing: border-box; }
@@ -27,14 +26,14 @@
       background: var(--bg);
       color: var(--text);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
-      padding: 16px;
+      padding: 12px;
     }
 
     main {
-      width: min(1180px, 100%);
+      width: min(1280px, 100%);
       margin: 0 auto;
       display: grid;
-      gap: 12px;
+      gap: 9px;
     }
 
     header {
@@ -47,194 +46,171 @@
 
     h1 {
       margin: 0;
-      font-size: 24px;
+      font-size: 28px;
       letter-spacing: 0;
     }
 
-    .sub, .status {
+    .sub, .status, .note {
       margin: 6px 0 0;
       color: var(--muted);
-      font-size: 13px;
-      line-height: 1.5;
+      font-size: 15px;
+      line-height: 1.45;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 12px;
     }
 
     .controls {
-      display: flex;
-      align-items: center;
+      display: grid;
+      grid-template-columns: 170px minmax(240px, 1fr) 120px;
       gap: 8px;
-      flex-wrap: wrap;
+      align-items: end;
     }
 
     label {
+      display: block;
       color: var(--muted);
-      font-size: 12px;
+      font-size: 13px;
+      margin-bottom: 4px;
     }
 
-    select, input {
+    input, button {
+      width: 100%;
       min-height: 36px;
-      border: 1px solid var(--line);
       border-radius: 8px;
-      padding: 0 10px;
-      background: white;
-      color: var(--text);
       font: inherit;
     }
 
-    .grid {
+    input {
+      border: 1px solid var(--line);
+      padding: 0 10px;
+      background: white;
+      color: var(--text);
+    }
+
+    button {
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: white;
+      padding: 0 14px;
+      cursor: pointer;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .summary-grid {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 10px;
-    }
-
-    .card {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 12px;
-      display: grid;
-      gap: 10px;
-      min-width: 0;
-    }
-
-    .card-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: start;
       gap: 8px;
     }
 
-    .symbol {
-      font-size: 22px;
-      font-weight: 800;
-      line-height: 1;
-    }
-
-    .date {
-      color: var(--muted);
-      font-size: 12px;
-      text-align: right;
-    }
-
-    .price {
-      font-size: 26px;
-      font-weight: 800;
-      line-height: 1;
-    }
-
-    .levels {
-      display: grid;
-      gap: 7px;
-    }
-
-    .level-row {
-      display: grid;
-      grid-template-columns: auto minmax(0, 1fr);
-      gap: 8px;
-      align-items: center;
-    }
-
-    .level-row input {
-      width: 100%;
-      text-align: right;
-      font-weight: 700;
-    }
-
-    canvas {
-      width: 100%;
-      height: 130px;
-      display: block;
+    .summary-card {
       border: 1px solid var(--line);
       border-radius: 8px;
+      padding: 10px;
       background: #fbfcfd;
-    }
-
-    .metrics {
       display: grid;
-      gap: 6px;
-      font-size: 13px;
-    }
-
-    .metric {
-      display: flex;
-      justify-content: space-between;
-      gap: 8px;
-      color: var(--muted);
-    }
-
-    .metric strong {
-      color: var(--text);
-      text-align: right;
-    }
-
-    .legend {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      color: var(--muted);
-      font-size: 11px;
-    }
-
-    .legend span {
-      display: inline-flex;
-      align-items: center;
       gap: 4px;
     }
 
-    .legend i {
-      width: 18px;
-      height: 0;
-      border-top: 2px solid currentColor;
-      display: inline-block;
+    .symbol {
+      font-weight: 800;
+      font-size: 24px;
+      line-height: 1;
     }
 
-    .legend .buy { color: var(--buy); }
-    .legend .ko { color: var(--ko); }
-    .legend .strike { color: var(--strike); }
+    .baseline {
+      font-size: 16px;
+      font-weight: 800;
+    }
 
-    .up { color: var(--bad) !important; }
-    .down { color: var(--good) !important; }
+    .small {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+    }
 
-    .table-panel {
-      background: var(--panel);
+    .table-wrap {
+      overflow: auto;
       border: 1px solid var(--line);
       border-radius: 8px;
-      overflow: auto;
-      max-height: 360px;
+      background: var(--panel);
+      max-height: 72vh;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 720px;
-      font-size: 13px;
+      min-width: 640px;
+      font-size: 16px;
+      table-layout: fixed;
     }
 
     th, td {
-      padding: 8px 10px;
+      padding: 8px 7px;
       border-bottom: 1px solid var(--line);
       text-align: right;
       white-space: nowrap;
     }
 
-    th:first-child, td:first-child { text-align: left; }
+    th:first-child, td:first-child {
+      text-align: left;
+      position: sticky;
+      left: 0;
+      z-index: 2;
+      background: inherit;
+    }
 
     th {
       position: sticky;
       top: 0;
-      z-index: 1;
-      background: #edf2f7;
+      z-index: 3;
+      background: var(--soft);
+      color: var(--text);
     }
 
-    @media (max-width: 980px) {
-      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    th:first-child {
+      z-index: 4;
+      background: var(--soft);
     }
 
-    @media (max-width: 560px) {
+    tr:nth-child(odd) td {
+      background: #fcfcfd;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    td.hit {
+      background: var(--hit-bg) !important;
+      color: var(--hit-text);
+      font-weight: 900;
+      box-shadow: inset 0 0 0 1px var(--hit-line);
+    }
+
+    .diff {
+      display: block;
+      font-size: 12px;
+      font-weight: 800;
+      color: inherit;
+      opacity: 0.82;
+      margin-top: 1px;
+    }
+
+    @media (max-width: 780px) {
+      .controls { grid-template-columns: 1fr; }
+      .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 520px) {
       body { padding: 12px; }
-      .grid { grid-template-columns: 1fr; }
-      header { align-items: stretch; }
-      .controls { display: grid; grid-template-columns: 1fr; }
-      select { width: 100%; }
+      .summary-grid { grid-template-columns: 1fr; }
+      h1 { font-size: 22px; }
     }
   </style>
 </head>
@@ -242,55 +218,50 @@
   <main>
     <header>
       <div>
-        <h1>四檔美股收盤價追蹤</h1>
-        <p class="sub">同時顯示 TSM、NVDA、AMD、AVGO；買入價、KO 價、執行價存在你的瀏覽器，不需要 API key。</p>
+        <h1>指定日收盤價比較表</h1>
+        <p class="sub">指定日只取收盤價當基準；表格從下一個交易日列到昨天，達標用紅底粗體標示。</p>
       </div>
-      <div class="controls">
-        <label for="period">期間</label>
-        <select id="period">
-          <option value="1">近 1 個月</option>
-          <option value="3">近 3 個月</option>
-        </select>
-      </div>
+      <p class="status" id="updatedAt">讀取資料中</p>
     </header>
 
-    <div class="status">
-      <span id="status">讀取資料中</span>
-      <span id="updatedAt"></span>
-    </div>
+    <section class="panel controls">
+      <div>
+        <label for="startDateInput">指定日期</label>
+        <input id="startDateInput" value="1150709" inputmode="numeric" aria-label="指定日期">
+      </div>
+      <div>
+        <label for="symbolsInput">指定股票</label>
+        <input id="symbolsInput" value="TSM,NVDA,AMD,AVGO" aria-label="指定股票">
+      </div>
+      <div>
+        <button id="applyBtn" type="button">更新表格</button>
+      </div>
+    </section>
 
-    <section class="grid" id="cards"></section>
+    <section class="panel">
+      <div class="status" id="status">讀取資料中</div>
+      <p class="note">日期可輸入民國年月日，例如 1150709；也可輸入西元 2026-07-09。資料來源沿用 GitHub Actions 產生的 <code>data/prices.json</code>。</p>
+    </section>
 
-    <section class="table-panel">
+    <section class="summary-grid" id="summaryCards"></section>
+
+    <section class="table-wrap">
       <table>
-        <thead>
-          <tr>
-            <th>股票</th>
-            <th>日期</th>
-            <th>最後收盤</th>
-            <th>買入價</th>
-            <th>KO 價</th>
-            <th>執行價</th>
-            <th>價差</th>
-            <th>報酬率</th>
-            <th>區間高點</th>
-            <th>區間低點</th>
-          </tr>
-        </thead>
-        <tbody id="summaryRows"></tbody>
+        <thead id="thead"></thead>
+        <tbody id="tbody"></tbody>
       </table>
     </section>
   </main>
 
   <script>
-    const TARGET_SYMBOLS = ["TSM", "NVDA", "AMD", "AVGO"];
-    const cardsEl = document.querySelector("#cards");
-    const periodEl = document.querySelector("#period");
+    const startDateInput = document.querySelector("#startDateInput");
+    const symbolsInput = document.querySelector("#symbolsInput");
+    const applyBtn = document.querySelector("#applyBtn");
     const statusEl = document.querySelector("#status");
     const updatedAtEl = document.querySelector("#updatedAt");
-    const summaryRowsEl = document.querySelector("#summaryRows");
-    const storeKey = "stock-quote:levels:v2";
-    const legacyBuyStoreKey = "stock-quote:buy-prices:v1";
+    const summaryCards = document.querySelector("#summaryCards");
+    const thead = document.querySelector("#thead");
+    const tbody = document.querySelector("#tbody");
     let priceData = null;
 
     function money(value) {
@@ -303,234 +274,169 @@
       return `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`;
     }
 
-    function cls(value) {
-      if (!Number.isFinite(value) || value === 0) return "";
-      return value > 0 ? "up" : "down";
+    function localDateValue(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
     }
 
-    function normalizeLevels(raw) {
-      const levels = {};
-      TARGET_SYMBOLS.forEach((symbol) => {
-        const value = raw?.[symbol];
-        if (typeof value === "number") {
-          levels[symbol] = { buy: value, ko: 0, strike: 0 };
-        } else {
-          levels[symbol] = {
-            buy: Number(value?.buy || 0),
-            ko: Number(value?.ko || 0),
-            strike: Number(value?.strike || 0)
-          };
-        }
-      });
-      return levels;
-    }
-
-    function loadLevels() {
-      try {
-        const stored = JSON.parse(localStorage.getItem(storeKey));
-        if (stored) return normalizeLevels(stored);
-        const legacy = JSON.parse(localStorage.getItem(legacyBuyStoreKey));
-        return normalizeLevels(legacy || {});
-      } catch {
-        return normalizeLevels({});
-      }
-    }
-
-    function saveLevel(symbol, kind, value) {
-      const levels = loadLevels();
-      levels[symbol] = levels[symbol] || { buy: 0, ko: 0, strike: 0 };
-      levels[symbol][kind] = value;
-      localStorage.setItem(storeKey, JSON.stringify(levels));
-    }
-
-    function cutoffDate(months) {
+    function yesterdayDate() {
       const date = new Date();
-      date.setMonth(date.getMonth() - Number(months || 1));
-      return date.toISOString().slice(0, 10);
+      date.setDate(date.getDate() - 1);
+      return localDateValue(date);
     }
 
-    function rowsFor(symbol) {
-      const allRows = priceData?.symbols?.[symbol]?.rows || [];
-      const cutoff = cutoffDate(periodEl.value);
-      return allRows.filter((row) => row.date >= cutoff);
+    function parseDateInput(value) {
+      const raw = String(value || "").trim();
+      if (/^\d{7}$/.test(raw)) {
+        const year = Number(raw.slice(0, 3)) + 1911;
+        return `${year}-${raw.slice(3, 5)}-${raw.slice(5, 7)}`;
+      }
+      if (/^\d{8}$/.test(raw)) {
+        return `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}`;
+      }
+      if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+      throw new Error("日期格式不正確，請輸入 1150709 或 2026-07-09");
+    }
+
+    function parseSymbols(value) {
+      const symbols = String(value || "")
+        .split(/[,\s，、]+/)
+        .map((symbol) => symbol.trim().toUpperCase())
+        .filter(Boolean);
+      return [...new Set(symbols)];
     }
 
     async function loadData() {
       const response = await fetch(`data/prices.json?ts=${Date.now()}`, { cache: "no-store" });
       if (!response.ok) throw new Error(`無法讀取 data/prices.json (${response.status})`);
       priceData = await response.json();
-      updatedAtEl.textContent = ` / 資料更新：${priceData.updatedAt ? new Date(priceData.updatedAt).toLocaleString("zh-TW", { hour12: false }) : "尚未更新"}（每日自動抓前一個美股交易日收盤價）`;
+      updatedAtEl.textContent = `資料更新：${priceData.updatedAt ? new Date(priceData.updatedAt).toLocaleString("zh-TW", { hour12: false }) : "尚未更新"}`;
       render();
     }
 
+    function rowsFor(symbol) {
+      return priceData?.symbols?.[symbol]?.rows || [];
+    }
+
+    function rowsInRange(symbol, startDate, endDate) {
+      return rowsFor(symbol).filter((row) => row.date >= startDate && row.date <= endDate);
+    }
+
+    function baselineFor(symbol, startDate) {
+      const rows = rowsFor(symbol);
+      return rows.find((row) => row.date >= startDate) || null;
+    }
+
+    function latestAvailableEnd(symbols, yesterday) {
+      const latestDates = symbols.map((symbol) => {
+        const rows = rowsFor(symbol).filter((row) => row.date <= yesterday);
+        return rows.at(-1)?.date || "";
+      }).filter(Boolean);
+      if (!latestDates.length) return yesterday;
+      return latestDates.sort()[0];
+    }
+
+    function collectDates(symbols, startDate, endDate) {
+      const set = new Set();
+      symbols.forEach((symbol) => {
+        rowsInRange(symbol, startDate, endDate).forEach((row) => set.add(row.date));
+      });
+      return [...set].sort();
+    }
+
+    function rowByDate(symbol) {
+      const map = new Map();
+      rowsFor(symbol).forEach((row) => map.set(row.date, row));
+      return map;
+    }
+
     function render() {
-      const levels = loadLevels();
-      cardsEl.innerHTML = TARGET_SYMBOLS.map((symbol) => cardTemplate(symbol, levels[symbol])).join("");
-      cardsEl.querySelectorAll("input[data-symbol][data-kind]").forEach((input) => {
-        input.addEventListener("input", () => {
-          saveLevel(input.dataset.symbol, input.dataset.kind, Number(input.value || 0));
-        });
-        input.addEventListener("change", render);
-        input.addEventListener("keydown", (event) => {
-          if (event.key === "Enter") {
-            input.blur();
-            render();
-          }
-        });
-      });
-      TARGET_SYMBOLS.forEach(drawSymbolChart);
-      renderSummary();
-      statusEl.textContent = `顯示近 ${periodEl.value} 個月資料`;
+      try {
+        const requestedStart = parseDateInput(startDateInput.value);
+        const symbols = parseSymbols(symbolsInput.value);
+        if (!symbols.length) throw new Error("請至少輸入一支股票");
+        const missing = symbols.filter((symbol) => !priceData?.symbols?.[symbol]?.rows?.length);
+        if (missing.length) throw new Error(`data/prices.json 沒有資料：${missing.join(", ")}`);
+
+        const baselines = Object.fromEntries(symbols.map((symbol) => [symbol, baselineFor(symbol, requestedStart)]));
+        const baselineMissing = symbols.filter((symbol) => !baselines[symbol]);
+        if (baselineMissing.length) throw new Error(`找不到指定日之後的基準收盤價：${baselineMissing.join(", ")}`);
+
+        const baselineDates = Object.values(baselines).map((row) => row.date).sort();
+        const firstBaselineDate = baselineDates[0];
+        const tableStartDate = baselineDates[baselineDates.length - 1];
+        const endDate = latestAvailableEnd(symbols, yesterdayDate());
+        const dates = collectDates(symbols, tableStartDate, endDate).filter((date) => date > tableStartDate);
+        const maps = Object.fromEntries(symbols.map((symbol) => [symbol, rowByDate(symbol)]));
+
+        renderSummary(symbols, baselines, requestedStart, firstBaselineDate, endDate, dates);
+        renderTable(symbols, baselines, maps, dates);
+        statusEl.textContent = `指定日期 ${startDateInput.value} 對應西元 ${requestedStart}；基準日不列入表格，表格顯示 ${dates[0] || "--"} 到 ${endDate}，共 ${dates.length} 個交易日。`;
+      } catch (error) {
+        statusEl.textContent = error.message;
+        summaryCards.innerHTML = "";
+        thead.innerHTML = "";
+        tbody.innerHTML = "";
+      }
     }
 
-    function cardTemplate(symbol, level) {
-      const rows = rowsFor(symbol);
-      const last = rows[rows.length - 1];
-      const buy = Number(level?.buy || 0);
-      const ko = Number(level?.ko || 0);
-      const strike = Number(level?.strike || 0);
-      const diff = last && buy ? last.close - buy : NaN;
-      const diffPct = last && buy ? diff / buy * 100 : NaN;
-      return `
-        <article class="card">
-          <div class="card-head">
-            <div class="symbol">${symbol}</div>
-            <div class="date">${last?.date || "無資料"}</div>
-          </div>
-          <div class="price">${last ? money(last.close) : "--"}</div>
-          <div class="levels">
-          <div class="level-row">
-            <label for="buy-${symbol}">買入價</label>
-            <input id="buy-${symbol}" data-symbol="${symbol}" data-kind="buy" type="number" min="0" step="0.01" value="${buy || ""}" placeholder="自訂">
-          </div>
-          <div class="level-row">
-            <label for="ko-${symbol}">KO 價</label>
-            <input id="ko-${symbol}" data-symbol="${symbol}" data-kind="ko" type="number" min="0" step="0.01" value="${ko || ""}" placeholder="自訂">
-          </div>
-          <div class="level-row">
-            <label for="strike-${symbol}">執行價</label>
-            <input id="strike-${symbol}" data-symbol="${symbol}" data-kind="strike" type="number" min="0" step="0.01" value="${strike || ""}" placeholder="自訂">
-          </div>
-          </div>
-          <canvas id="chart-${symbol}" width="300" height="130"></canvas>
-          <div class="legend">
-            <span class="buy"><i></i>買入</span>
-            <span class="ko"><i></i>KO</span>
-            <span class="strike"><i></i>執行</span>
-          </div>
-          <div class="metrics">
-            <div class="metric"><span>價差</span><strong class="${cls(diff)}">${Number.isFinite(diff) ? `${diff >= 0 ? "+" : "-"}${money(Math.abs(diff))}` : "--"}</strong></div>
-            <div class="metric"><span>報酬率</span><strong class="${cls(diffPct)}">${pct(diffPct)}</strong></div>
-          </div>
-        </article>
-      `;
-    }
-
-    function drawSymbolChart(symbol) {
-      const canvas = document.querySelector(`#chart-${symbol}`);
-      const rows = rowsFor(symbol);
-      if (!canvas || !rows.length) return;
-      const level = loadLevels()[symbol] || {};
-      const buy = Number(level.buy || 0);
-      const ko = Number(level.ko || 0);
-      const strike = Number(level.strike || 0);
-      const rect = canvas.getBoundingClientRect();
-      const scale = window.devicePixelRatio || 1;
-      canvas.width = Math.max(260, Math.floor(rect.width * scale));
-      canvas.height = Math.floor(130 * scale);
-      const ctx = canvas.getContext("2d");
-      ctx.scale(scale, scale);
-      const width = canvas.width / scale;
-      const height = canvas.height / scale;
-      const pad = { left: 42, right: 8, top: 10, bottom: 22 };
-      const closes = rows.map((row) => Number(row.close));
-      const guideValues = [buy, ko, strike].filter((value) => Number.isFinite(value) && value > 0);
-      const values = closes.concat(guideValues);
-      const min = Math.min(...values);
-      const max = Math.max(...values);
-      const span = max === min ? 1 : max - min;
-      const x = (index) => pad.left + index / Math.max(1, rows.length - 1) * (width - pad.left - pad.right);
-      const y = (value) => pad.top + (max - value) / span * (height - pad.top - pad.bottom);
-
-      ctx.clearRect(0, 0, width, height);
-      ctx.fillStyle = "#fbfcfd";
-      ctx.fillRect(0, 0, width, height);
-      ctx.strokeStyle = "#d8dee4";
-      ctx.lineWidth = 1;
-      ctx.fillStyle = "#667085";
-      ctx.font = "10px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
-
-      [min, max].forEach((value) => {
-        const yy = y(value);
-        ctx.beginPath();
-        ctx.moveTo(pad.left, yy);
-        ctx.lineTo(width - pad.right, yy);
-        ctx.stroke();
-        ctx.fillText(money(value).replace(".00", ""), 5, yy + 3);
-      });
-
-      drawGuideLine(ctx, y, pad.left, width - pad.right, buy, "#b45309", [5, 4]);
-      drawGuideLine(ctx, y, pad.left, width - pad.right, ko, "#7c3aed", [2, 4]);
-      drawGuideLine(ctx, y, pad.left, width - pad.right, strike, "#0891b2", []);
-
-      ctx.strokeStyle = "#2563eb";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      rows.forEach((row, index) => {
-        if (index === 0) ctx.moveTo(x(index), y(row.close));
-        else ctx.lineTo(x(index), y(row.close));
-      });
-      ctx.stroke();
-
-      ctx.fillStyle = "#667085";
-      ctx.fillText(rows[0].date.slice(5), pad.left, height - 7);
-      ctx.fillText(rows[rows.length - 1].date.slice(5), width - 42, height - 7);
-    }
-
-    function drawGuideLine(ctx, yScale, startX, endX, value, color, dash) {
-      if (!Number.isFinite(value) || value <= 0) return;
-      ctx.strokeStyle = color;
-      ctx.setLineDash(dash);
-      ctx.beginPath();
-      ctx.moveTo(startX, yScale(value));
-      ctx.lineTo(endX, yScale(value));
-      ctx.stroke();
-      ctx.setLineDash([]);
-    }
-
-    function renderSummary() {
-      const levels = loadLevels();
-      summaryRowsEl.innerHTML = TARGET_SYMBOLS.map((symbol) => {
-        const rows = rowsFor(symbol);
-        const last = rows[rows.length - 1];
-        const level = levels[symbol] || {};
-        const buy = Number(level.buy || 0);
-        const ko = Number(level.ko || 0);
-        const strike = Number(level.strike || 0);
-        const closes = rows.map((row) => row.close);
-        const high = closes.length ? Math.max(...closes) : NaN;
-        const low = closes.length ? Math.min(...closes) : NaN;
-        const diff = last && buy ? last.close - buy : NaN;
-        const diffPct = last && buy ? diff / buy * 100 : NaN;
+    function renderSummary(symbols, baselines, requestedStart, startDate, endDate, dates) {
+      summaryCards.innerHTML = symbols.map((symbol) => {
+        const base = baselines[symbol];
+        const rows = rowsInRange(symbol, startDate, endDate);
+        const comparableRows = rows.filter((row) => row.date > base.date);
+        const hits = comparableRows.filter((row) => row.close >= base.close).length;
+        const last = rows.at(-1);
+        const diff = last ? last.close - base.close : NaN;
+        const diffPct = last ? diff / base.close * 100 : NaN;
         return `
-          <tr>
-            <td>${symbol}</td>
-            <td>${last?.date || "--"}</td>
-            <td>${last ? money(last.close) : "--"}</td>
-            <td>${money(buy)}</td>
-            <td>${money(ko)}</td>
-            <td>${money(strike)}</td>
-            <td class="${cls(diff)}">${Number.isFinite(diff) ? `${diff >= 0 ? "+" : "-"}${money(Math.abs(diff))}` : "--"}</td>
-            <td class="${cls(diffPct)}">${pct(diffPct)}</td>
-            <td>${money(high)}</td>
-            <td>${money(low)}</td>
-          </tr>
+          <article class="summary-card">
+            <div class="symbol">${symbol}</div>
+            <div class="baseline">基準 ${base.date}: ${money(base.close)}</div>
+            <div class="small">最新 ${last?.date || "--"}: ${last ? money(last.close) : "--"} / ${pct(diffPct)}</div>
+            <div class="small">達標天數：${hits} / ${comparableRows.length}</div>
+          </article>
         `;
       }).join("");
     }
 
-    periodEl.addEventListener("change", render);
-    window.addEventListener("resize", render);
+    function renderTable(symbols, baselines, maps, dates) {
+      thead.innerHTML = `
+        <tr>
+          <th>日期</th>
+          ${symbols.map((symbol) => `<th>${symbol}<br><span class="small">基準 ${money(baselines[symbol].close)}</span></th>`).join("")}
+        </tr>
+      `;
+      tbody.innerHTML = dates.map((date) => `
+        <tr>
+          <td>${date}</td>
+          ${symbols.map((symbol) => renderCell(maps[symbol].get(date), baselines[symbol].close)).join("")}
+        </tr>
+      `).join("");
+    }
+
+    function renderCell(row, baseline) {
+      if (!row) return "<td>--</td>";
+      const diff = row.close - baseline;
+      const diffPct = diff / baseline * 100;
+      const isHit = row.close >= baseline;
+      return `
+        <td class="${isHit ? "hit" : ""}">
+          ${money(row.close)}
+          <span class="diff">${diff >= 0 ? "+" : "-"}${money(Math.abs(diff))} / ${pct(diffPct)}</span>
+        </td>
+      `;
+    }
+
+    applyBtn.addEventListener("click", render);
+    startDateInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") render();
+    });
+    symbolsInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") render();
+    });
 
     loadData().catch((error) => {
       statusEl.textContent = error.message;
