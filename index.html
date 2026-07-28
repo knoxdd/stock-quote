@@ -6,16 +6,17 @@
   <title>指定日收盤價比較表</title>
   <style>
     :root {
-      --bg: #f6f7f9;
+      --bg: #f5f6f8;
       --panel: #ffffff;
-      --text: #1f2937;
-      --muted: #667085;
-      --line: #d8dee4;
+      --text: #111827;
+      --muted: #5f6b7a;
+      --black: #111111;
+      --soft: #f0f3f7;
+      --ko: #0b7a3b;
+      --ko-bg: #e8f7ee;
+      --touch: #b42318;
+      --touch-bg: #fff1f0;
       --accent: #2563eb;
-      --hit-bg: #fff1f0;
-      --hit-line: #ff9f9a;
-      --hit-text: #b42318;
-      --soft: #edf2f7;
     }
 
     * { box-sizing: border-box; }
@@ -30,43 +31,78 @@
     }
 
     main {
-      width: min(1280px, 100%);
+      width: min(1320px, 100%);
       margin: 0 auto;
       display: grid;
       gap: 9px;
     }
 
+    .tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .tab-btn {
+      width: auto;
+      min-width: 156px;
+      min-height: 38px;
+      border: 2px solid var(--black);
+      border-radius: 8px;
+      background: #ffffff;
+      color: var(--text);
+      padding: 0 14px;
+      font-weight: 950;
+      cursor: pointer;
+    }
+
+    .tab-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #ffffff;
+    }
+
     header {
       display: flex;
       justify-content: space-between;
-      gap: 12px;
       align-items: end;
+      gap: 12px;
       flex-wrap: wrap;
     }
 
     h1 {
       margin: 0;
       font-size: 28px;
+      line-height: 1.1;
       letter-spacing: 0;
     }
 
+    .deal {
+      display: inline-block;
+      margin-bottom: 5px;
+      color: var(--accent);
+      font-size: 16px;
+      font-weight: 950;
+    }
+
     .sub, .status, .note {
-      margin: 6px 0 0;
+      margin: 5px 0 0;
       color: var(--muted);
       font-size: 15px;
-      line-height: 1.45;
+      line-height: 1.4;
     }
 
     .panel {
       background: var(--panel);
-      border: 1px solid var(--line);
+      border: 1px solid #d6dbe3;
       border-radius: 8px;
       padding: 10px 12px;
     }
 
     .controls {
       display: grid;
-      grid-template-columns: 170px minmax(240px, 1fr) 120px;
+      grid-template-columns: 170px minmax(240px, 1fr) 118px;
       gap: 8px;
       align-items: end;
     }
@@ -83,10 +119,11 @@
       min-height: 36px;
       border-radius: 8px;
       font: inherit;
+      font-size: 16px;
     }
 
     input {
-      border: 1px solid var(--line);
+      border: 1px solid #c9d0da;
       padding: 0 10px;
       background: white;
       color: var(--text);
@@ -98,7 +135,7 @@
       color: white;
       padding: 0 14px;
       cursor: pointer;
-      font-weight: 700;
+      font-weight: 800;
       white-space: nowrap;
     }
 
@@ -109,23 +146,30 @@
     }
 
     .summary-card {
-      border: 1px solid var(--line);
+      border: 1px solid #cfd6df;
       border-radius: 8px;
       padding: 10px;
-      background: #fbfcfd;
+      background: var(--panel);
       display: grid;
-      gap: 4px;
+      gap: 5px;
+    }
+
+    .card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
     }
 
     .symbol {
-      font-weight: 800;
+      font-weight: 950;
       font-size: 24px;
       line-height: 1;
     }
 
     .baseline {
       font-size: 16px;
-      font-weight: 800;
+      font-weight: 900;
     }
 
     .small {
@@ -134,35 +178,49 @@
       line-height: 1.35;
     }
 
+    .table-deal {
+      display: block;
+      margin-top: 3px;
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 950;
+      line-height: 1.25;
+    }
+
+    .percent-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      font-size: 15px;
+      font-weight: 950;
+    }
+
+    .ko-text { color: var(--ko); }
+    .touch-text { color: var(--touch); }
+
     .table-wrap {
       overflow: auto;
-      border: 1px solid var(--line);
-      border-radius: 8px;
+      border: 3px solid var(--black);
+      border-radius: 6px;
       background: var(--panel);
       max-height: 72vh;
     }
 
     table {
       width: 100%;
+      min-width: 620px;
       border-collapse: collapse;
-      min-width: 640px;
-      font-size: 16px;
       table-layout: fixed;
+      font-size: 17px;
+      border: 3px solid var(--black);
     }
 
     th, td {
-      padding: 8px 7px;
-      border-bottom: 1px solid var(--line);
-      text-align: right;
+      border: 1px solid var(--black);
+      padding: 8px 6px;
+      text-align: center;
+      vertical-align: middle;
       white-space: nowrap;
-    }
-
-    th:first-child, td:first-child {
-      text-align: left;
-      position: sticky;
-      left: 0;
-      z-index: 2;
-      background: inherit;
     }
 
     th {
@@ -171,6 +229,15 @@
       z-index: 3;
       background: var(--soft);
       color: var(--text);
+      font-weight: 950;
+    }
+
+    th:first-child, td:first-child {
+      position: sticky;
+      left: 0;
+      z-index: 2;
+      background: #ffffff;
+      font-weight: 950;
     }
 
     th:first-child {
@@ -178,48 +245,52 @@
       background: var(--soft);
     }
 
-    tr:nth-child(odd) td {
-      background: #fcfcfd;
+    td.ko-hit {
+      background: var(--ko-bg);
+      color: var(--ko);
+      font-weight: 950;
     }
 
-    tr:last-child td {
-      border-bottom: 0;
-    }
-
-    td.hit {
-      background: var(--hit-bg) !important;
-      color: var(--hit-text);
-      font-weight: 900;
-      box-shadow: inset 0 0 0 1px var(--hit-line);
+    td.touch-hit {
+      background: var(--touch-bg);
+      color: var(--touch);
+      font-weight: 950;
     }
 
     .diff {
       display: block;
       font-size: 12px;
-      font-weight: 800;
+      font-weight: 900;
       color: inherit;
-      opacity: 0.82;
       margin-top: 1px;
     }
 
     @media (max-width: 780px) {
       .controls { grid-template-columns: 1fr; }
       .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      table { font-size: 15px; }
     }
 
     @media (max-width: 520px) {
-      body { padding: 12px; }
+      body { padding: 10px; }
       .summary-grid { grid-template-columns: 1fr; }
       h1 { font-size: 22px; }
+      .tab-btn { min-width: 0; flex: 1 1 140px; }
     }
   </style>
 </head>
 <body>
   <main>
+    <nav class="tabs" aria-label="單號分頁">
+      <button class="tab-btn active" type="button" data-tab="0">分頁1 2026SN4064</button>
+      <button class="tab-btn" type="button" data-tab="1">分頁2 2026SN3170</button>
+    </nav>
+
     <header>
       <div>
+        <span class="deal" id="dealName">2026SN4064</span>
         <h1>指定日收盤價比較表</h1>
-        <p class="sub">指定日只取收盤價當基準；表格從下一個交易日列到昨天，達標用紅底粗體標示。</p>
+        <p class="sub" id="ruleText">指定日只取收盤價當基準；表格從下一個交易日列到昨天。價格達 KO 100% 標綠，跌到觸及 60% 標紅。</p>
       </div>
       <p class="status" id="updatedAt">讀取資料中</p>
     </header>
@@ -240,7 +311,7 @@
 
     <section class="panel">
       <div class="status" id="status">讀取資料中</div>
-      <p class="note">日期可輸入民國年月日，例如 1150709；也可輸入西元 2026-07-09。資料來源沿用 GitHub Actions 產生的 <code>data/prices.json</code>。</p>
+      <p class="note">日期可輸入民國年月日，例如 1150709；也可輸入西元 2026-07-09。KO% 與觸及% 僅顯示比例，不顯示金額。</p>
     </section>
 
     <section class="summary-grid" id="summaryCards"></section>
@@ -254,6 +325,23 @@
   </main>
 
   <script>
+    const DEALS = [
+      {
+        name: "2026SN4064",
+        startInput: "1150709",
+        symbols: ["TSM", "NVDA", "AMD", "AVGO"],
+        koPercent: 100,
+        touchPercent: 60
+      },
+      {
+        name: "2026SN3170",
+        startInput: "1150601",
+        symbols: ["ORCL", "INTC"],
+        koPercent: 100,
+        touchPercent: 68
+      }
+    ];
+
     const startDateInput = document.querySelector("#startDateInput");
     const symbolsInput = document.querySelector("#symbolsInput");
     const applyBtn = document.querySelector("#applyBtn");
@@ -262,7 +350,15 @@
     const summaryCards = document.querySelector("#summaryCards");
     const thead = document.querySelector("#thead");
     const tbody = document.querySelector("#tbody");
+    const dealNameEl = document.querySelector("#dealName");
+    const ruleTextEl = document.querySelector("#ruleText");
+    const tabButtons = [...document.querySelectorAll(".tab-btn")];
     let priceData = null;
+    let activeDealIndex = 0;
+
+    function activeDeal() {
+      return DEALS[activeDealIndex];
+    }
 
     function money(value) {
       if (!Number.isFinite(value)) return "--";
@@ -325,8 +421,7 @@
     }
 
     function baselineFor(symbol, startDate) {
-      const rows = rowsFor(symbol);
-      return rows.find((row) => row.date >= startDate) || null;
+      return rowsFor(symbol).find((row) => row.date >= startDate) || null;
     }
 
     function latestAvailableEnd(symbols, yesterday) {
@@ -352,17 +447,34 @@
       return map;
     }
 
+    function threshold(base, percent) {
+      return base * percent / 100;
+    }
+
+    function applyDealPreset(index) {
+      activeDealIndex = index;
+      const deal = activeDeal();
+      startDateInput.value = deal.startInput;
+      symbolsInput.value = deal.symbols.join(",");
+      tabButtons.forEach((button, buttonIndex) => {
+        button.classList.toggle("active", buttonIndex === index);
+      });
+      render();
+    }
+
     function render() {
       try {
+        if (!priceData) return;
+        const deal = activeDeal();
         const requestedStart = parseDateInput(startDateInput.value);
         const symbols = parseSymbols(symbolsInput.value);
-        if (!symbols.length) throw new Error("請至少輸入一支股票");
+        if (!symbols.length) throw new Error("請至少輸入一檔股票代號");
         const missing = symbols.filter((symbol) => !priceData?.symbols?.[symbol]?.rows?.length);
-        if (missing.length) throw new Error(`data/prices.json 沒有資料：${missing.join(", ")}`);
+        if (missing.length) throw new Error(`data/prices.json 尚未有資料：${missing.join(", ")}。上傳後請先手動跑一次 Update stock history。`);
 
         const baselines = Object.fromEntries(symbols.map((symbol) => [symbol, baselineFor(symbol, requestedStart)]));
         const baselineMissing = symbols.filter((symbol) => !baselines[symbol]);
-        if (baselineMissing.length) throw new Error(`找不到指定日之後的基準收盤價：${baselineMissing.join(", ")}`);
+        if (baselineMissing.length) throw new Error(`找不到指定日之後的收盤價資料：${baselineMissing.join(", ")}`);
 
         const baselineDates = Object.values(baselines).map((row) => row.date).sort();
         const firstBaselineDate = baselineDates[0];
@@ -371,8 +483,11 @@
         const dates = collectDates(symbols, tableStartDate, endDate).filter((date) => date > tableStartDate);
         const maps = Object.fromEntries(symbols.map((symbol) => [symbol, rowByDate(symbol)]));
 
-        renderSummary(symbols, baselines, requestedStart, firstBaselineDate, endDate, dates);
-        renderTable(symbols, baselines, maps, dates);
+        dealNameEl.textContent = deal.name;
+        ruleTextEl.textContent = `指定日只取收盤價當基準；表格從下一個交易日列到昨天。價格達 KO ${deal.koPercent}% 標綠，跌到觸及 ${deal.touchPercent}% 標紅。`;
+        document.title = `${deal.name} 指定日收盤價比較表`;
+        renderSummary(deal, symbols, baselines, firstBaselineDate, endDate);
+        renderTable(deal, symbols, baselines, maps, dates);
         statusEl.textContent = `指定日期 ${startDateInput.value} 對應西元 ${requestedStart}；基準日不列入表格，表格顯示 ${dates[0] || "--"} 到 ${endDate}，共 ${dates.length} 個交易日。`;
       } catch (error) {
         statusEl.textContent = error.message;
@@ -382,54 +497,67 @@
       }
     }
 
-    function renderSummary(symbols, baselines, requestedStart, startDate, endDate, dates) {
+    function renderSummary(deal, symbols, baselines, startDate, endDate) {
       summaryCards.innerHTML = symbols.map((symbol) => {
         const base = baselines[symbol];
-        const rows = rowsInRange(symbol, startDate, endDate);
-        const comparableRows = rows.filter((row) => row.date > base.date);
-        const hits = comparableRows.filter((row) => row.close >= base.close).length;
+        const rows = rowsInRange(symbol, startDate, endDate).filter((row) => row.date > base.date);
+        const koHits = rows.filter((row) => row.close >= threshold(base.close, deal.koPercent)).length;
+        const touchHits = rows.filter((row) => row.close <= threshold(base.close, deal.touchPercent)).length;
         const last = rows.at(-1);
         const diff = last ? last.close - base.close : NaN;
         const diffPct = last ? diff / base.close * 100 : NaN;
         return `
           <article class="summary-card">
-            <div class="symbol">${symbol}</div>
-            <div class="baseline">基準 ${base.date}: ${money(base.close)}</div>
+            <div class="card-head">
+              <div class="symbol">${symbol}</div>
+              <div class="small">基準日 ${base.date}</div>
+            </div>
+            <div class="baseline">基準收盤 ${money(base.close)}</div>
+            <div class="percent-row">
+              <span class="ko-text">KO ${deal.koPercent}%</span>
+              <span class="touch-text">觸及 ${deal.touchPercent}%</span>
+            </div>
             <div class="small">最新 ${last?.date || "--"}: ${last ? money(last.close) : "--"} / ${pct(diffPct)}</div>
-            <div class="small">達標天數：${hits} / ${comparableRows.length}</div>
+            <div class="small">KO 天數 ${koHits}，觸及天數 ${touchHits}，統計 ${rows.length} 日</div>
           </article>
         `;
       }).join("");
     }
 
-    function renderTable(symbols, baselines, maps, dates) {
+    function renderTable(deal, symbols, baselines, maps, dates) {
       thead.innerHTML = `
         <tr>
-          <th>日期</th>
-          ${symbols.map((symbol) => `<th>${symbol}<br><span class="small">基準 ${money(baselines[symbol].close)}</span></th>`).join("")}
+          <th>日期<br><span class="table-deal">${deal.name}</span></th>
+          ${symbols.map((symbol) => `<th>${symbol}<br><span class="small">基準 ${money(baselines[symbol].close)}</span><br><span class="ko-text">${deal.koPercent}%</span> / <span class="touch-text">${deal.touchPercent}%</span></th>`).join("")}
         </tr>
       `;
       tbody.innerHTML = dates.map((date) => `
         <tr>
           <td>${date}</td>
-          ${symbols.map((symbol) => renderCell(maps[symbol].get(date), baselines[symbol].close)).join("")}
+          ${symbols.map((symbol) => renderCell(maps[symbol].get(date), baselines[symbol].close, deal)).join("")}
         </tr>
       `).join("");
     }
 
-    function renderCell(row, baseline) {
+    function renderCell(row, baseline, deal) {
       if (!row) return "<td>--</td>";
       const diff = row.close - baseline;
       const diffPct = diff / baseline * 100;
-      const isHit = row.close >= baseline;
+      const koLine = threshold(baseline, deal.koPercent);
+      const touchLine = threshold(baseline, deal.touchPercent);
+      const state = row.close >= koLine ? "ko-hit" : row.close <= touchLine ? "touch-hit" : "";
+      const classAttr = state ? ` class="${state}"` : "";
       return `
-        <td class="${isHit ? "hit" : ""}">
+        <td${classAttr}>
           ${money(row.close)}
           <span class="diff">${diff >= 0 ? "+" : "-"}${money(Math.abs(diff))} / ${pct(diffPct)}</span>
         </td>
       `;
     }
 
+    tabButtons.forEach((button) => {
+      button.addEventListener("click", () => applyDealPreset(Number(button.dataset.tab)));
+    });
     applyBtn.addEventListener("click", render);
     startDateInput.addEventListener("keydown", (event) => {
       if (event.key === "Enter") render();
