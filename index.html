@@ -604,7 +604,7 @@
       thead.innerHTML = `
         <tr>
           <th>日期<br><span class="table-deal">${deal.name}</span></th>
-          ${symbols.map((symbol) => `<th><span class="header-line">${symbol}</span><span class="header-line"><span class="header-label">基準</span>${money(baselines[symbol].close)}</span><span class="header-line ko-text"><span class="header-label">KO</span>${deal.koPercent}%</span><span class="header-line touch-text"><span class="header-label">觸及</span>${deal.touchPercent}%</span></th>`).join("")}
+          ${symbols.map((symbol) => `<th><span class="header-line">${symbol}</span><span class="header-line"><span class="header-label">基準</span>${money(baselines[symbol].close)}</span><span class="header-line ko-text"><span class="header-label">KO</span>${money(threshold(baselines[symbol].close, deal.koPercent))}</span><span class="header-line touch-text"><span class="header-label">觸及</span>${money(threshold(baselines[symbol].close, deal.touchPercent))}</span></th>`).join("")}
         </tr>
       `;
       tbody.innerHTML = dates.map((date) => `
