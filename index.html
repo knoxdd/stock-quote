@@ -246,6 +246,21 @@
       font-weight: 950;
     }
 
+    th .header-line {
+      display: block;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.25;
+      font-size: clamp(12px, 1.25vw, 16px);
+    }
+
+    th .header-label {
+      display: inline-block;
+      min-width: 3.2em;
+      margin-right: 2px;
+    }
+
     th:first-child, td:first-child {
       position: sticky;
       left: 0;
@@ -589,7 +604,7 @@
       thead.innerHTML = `
         <tr>
           <th>日期<br><span class="table-deal">${deal.name}</span></th>
-          ${symbols.map((symbol) => `<th>${symbol}<br><span class="small">基準 ${money(baselines[symbol].close)}</span><br><span class="ko-text">${deal.koPercent}%</span> / <span class="touch-text">${deal.touchPercent}%</span></th>`).join("")}
+          ${symbols.map((symbol) => `<th><span class="header-line">${symbol}</span><span class="header-line"><span class="header-label">基準</span>${money(baselines[symbol].close)}</span><span class="header-line ko-text"><span class="header-label">KO</span>${deal.koPercent}%</span><span class="header-line touch-text"><span class="header-label">觸及</span>${deal.touchPercent}%</span></th>`).join("")}
         </tr>
       `;
       tbody.innerHTML = dates.map((date) => `
