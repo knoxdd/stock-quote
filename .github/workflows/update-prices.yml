@@ -3,7 +3,8 @@ name: Update stock history
 on:
   workflow_dispatch:
   schedule:
-    - cron: "30 11 * * 2-6"
+    # 23:30 UTC = 07:30 Asia/Taipei on the following day.
+    - cron: "30 23 * * 1-5"
 
 permissions:
   contents: write
